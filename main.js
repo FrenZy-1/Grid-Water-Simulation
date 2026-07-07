@@ -53,9 +53,9 @@ drawGrid(39, 39, 35, 30);
 
 // Enums
 const state = Object.freeze({
-	DEFAULT: 0,
+	NORMAL: 0,
 	HOVER: 1,
-	CLICKED: 2,
+	CLICK: 2,
 });
 
 const animationType = Object.freeze({
@@ -65,6 +65,7 @@ const animationType = Object.freeze({
 	EASE_IN_OUT: 3,
 	GRAVITY: 4,
 	SPRING: 5,
+	PULSE: 6,
 });
 
 // For the diamonds and their params.
@@ -80,46 +81,118 @@ class Cell {
 	color; // Default color. Based on light/dark mode.
 	targetColor; // For end point of color change.
 
+	state; // For determining if re-rendering is required.
+
 	constructor(x, y) {
 		this.x = x;
 		this.y = y;
 
 		this.size = 4;
-		this.targetSize = size * 2;
+		this.targetSize = this.size * 2;
 
-		this.color = "white";
-		this.targetColor = "black";
+		this.color = Theme.shapeClr;
+		this.targetColor = undefined;
 	}
+
+	setState() {} // For updating state after animation finishes.
+	update() {} // Update class vars
+	render() {} // Render every state change
+	checkDelay() {} // Remaining time before animation needs to start
 }
 
 // For initiating update sequence and animation changes.
 // Will hold the list of cells.
 class Grid {
-	Cells;
+	static gridX;
+	static gridY;
+
+	static gapX;
+	static gapY;
+
+	static row;
+	static column;
+
+	static cells = [];
+
+	// Constructs the grid. Theming will be pulled from the theme class.
+	constructor(gX, gY, gaX, gaY) {}
+
+	update() {} // Will get called from mouse
+	render() {} // Initiate render for each cell, will call calcNextTarget and calcDelay.
+	getCell() {} // For use in mouse setstate. Helper.
+
+	triggerWave() {} // Will start animation.
 }
 
 // For tracking the theme from 'data-theme' attr.
 // Will be used when user clicks dark/light mode button.
 class Theme {
-	canvasClr;
-	shapeClr;
-	hoverClr;
-	clickClr;
+	static canvasClr;
+	static shapeClr;
+	static hoverClr;
+	static clickClr;
+	static rippleClr; // For the ripple generated after clicking. Will prolly use a shade of accent color.
+
+	loadVariables() {}
+	update() {} // Update class variables.
 }
 
 // Will fetch the position of the mouse from 'mousemove'
 // Also calculates the row and column.
 class Mouse {
-	x;
-	y;
+	static x;
+	static y;
 
-	row;
-	col;
+	static isDown;
+
+	// Get the pos of the mouse from 'mousemove'
+	static update() {
+		this.on(["mousemove", "mousedown", "mouseup"], (e) => {
+			this.x = e.x;
+			this.y = e.y;
+
+			if (e.type === "mousedown") {
+				this.isDown = true;
+			} else if (e.type === "mouseup") {
+				this.isDown = false;
+			}
+		});
+	}
+
+	// Helpers
+	static on(events, callback) {
+		events.forEach((e) => {
+			window.addEventListener(e, callback);
+		});
+	}
 }
 
 // Will hold animation primitives (linear, ease-in, ease-out etc)
 // Should work with other elements apart from the grid cells.
-class Animation {}
+class Animation {
+	linear() {}
+	easeIn() {}
+	easeOut() {}
+	easeInOut() {}
+	gravity() {}
+	spring() {}
+	pulse() {}
+}
 
 // Resp for orchestration
-class App {}
+class App {
+	constructor() {}
+
+	// Main event loop
+	run() {}
+
+	// Aux functions
+	render() {}
+	update() {}
+}
+
+function tempRun() {
+	Mouse.update();
+	requestAnimationFrame(tempRun);
+}
+requestAnimationFrame(tempRun);
