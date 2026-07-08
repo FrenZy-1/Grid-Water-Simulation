@@ -1,3 +1,31 @@
+:root {
+    --canvas-ripple-100: #DCAE8C;
+    --canvas-ripple-200: #D59E76;
+    --canvas-ripple-300: #CD8E5E;
+    --canvas-ripple-400: #C47E46;
+    --canvas-ripple-500: #BC6E29;
+    --canvas-ripple-600: #A05D21;
+    --canvas-ripple-700: #864D1A;
+    --canvas-ripple-800: #6C3D13;
+    --canvas-ripple-900: #532D0C;
+}
+
+:root[data-theme=light] {
+    --bg: #F2EED5;
+    --canvas-shape: #1E2F3E;
+    
+    --canvas-hover: var(--canvas-ripple-500);
+    --canvas-click: var(--canvas-ripple-500);
+}
+
+:root[data-theme=dark] {
+    --bg: #1E2F3E;
+    --canvas-shape: #F2EED5;
+    
+    --canvas-hover: var(--canvas-ripple-500);
+    --canvas-click: var(--canvas-ripple-500);
+}
+
 * {
     box-sizing: border-box;
 }
@@ -8,6 +36,10 @@ body {
     width: 100%;
     height: 100%;
     overflow: hidden;
+}
+
+body {
+    background-color: var(--bg);
 }
 
 canvas {
