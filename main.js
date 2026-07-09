@@ -14,7 +14,7 @@ ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
 // Globals
 const DIAMOND_SIZE = 8;
-const EFFECT_RADIUS = DIAMOND_SIZE * 2;
+const EFFECT_RADIUS = DIAMOND_SIZE * 3;
 const EFFECT_LIMIT = 3;
 
 const HOVER_SIZE = DIAMOND_SIZE * 2;
@@ -138,15 +138,11 @@ class Pointer {
 			this.isDown = false;
 
 			const coords = grid.calcCell(this.curr.x, this.curr.y);
-			const prevCoords = grid.calcCell(this.prev.x, this.prev.y);
 
-			if (
-				coords === undefined ||
-				prevCoords === undefined ||
-				prevCoords.column !== coords.column ||
-				prevCoords.row !== coords.row
-			)
-				grid.animate(prevCoords, cellState.NORMAL);
+			if (e.pointerType === "touch") {
+				grid.animate(coords, cellState.NORMAL);
+				return;
+			}
 
 			grid.animate(coords, cellState.HOVER);
 		});
@@ -257,7 +253,7 @@ class Grid {
 	gapY;
 
 	cells = [];
-	static dirtyCells = [];
+	static dirtyCells = new Set();
 
 	// Constructs the grid. Theming will be pulled from the theme class.
 	constructor(gX, gY, gaX, gaY) {
@@ -277,69 +273,48 @@ class Grid {
 		const tokens = this.lookupValues(state);
 		if (tokens === undefined) return;
 
-		// Column
-		for (var x = 0; x < this.cells[coords.row].length; ++x) {
-			const currCell = this.cells[coords.row][x];
+		// Clamp coords
+		const startY = Math.max(0, coords.row - EFFECT_LIMIT);
+		const endY = Math.min(this.cells.length - 1, coords.row + EFFECT_LIMIT);
 
-			const dist = Math.abs(x - coords.column);
-			if (dist > EFFECT_LIMIT) continue;
+		const startX = Math.max(0, coords.column - EFFECT_LIMIT);
+		const endX = Math.min(
+			this.cells[0].length - 1,
+			coords.column + EFFECT_LIMIT,
+		);
 
-			currCell.delay = dist * PROPAGATION_SPEED;
+		// Radial effect
+		for (var y = startY; y <= endY; ++y) {
+			for (var x = startX; x <= endX; ++x) {
+				const currCell = this.cells[y][x];
 
-			currCell.targetSize =
-				state === cellState.NORMAL
-					? tokens.size
-					: tokens.size - dist * STEPS <= DIAMOND_SIZE
-						? DIAMOND_SIZE
-						: state === cellState.CLICK
-							? tokens.size - dist * (STEPS + 1)
-							: tokens.size - dist * STEPS;
-			currCell.targetColor =
-				state === cellState.NORMAL
-					? tokens.color
-					: tokens.color[tokens.color.length - 1 - dist];
+				const dist = Math.floor(
+					Math.abs(x - coords.column) + Math.abs(y - coords.row),
+				);
+				if (dist > EFFECT_LIMIT) continue;
 
-			if (currCell.selfState !== state) {
-				currCell.selfState = state;
-				Grid.dirtyCells.push(currCell);
-				currCell.animate(() => {
-					Grid.dirtyCells = Grid.dirtyCells.filter(
-						(c) => c !== currCell,
-					);
-				});
-			}
-		}
+				currCell.delay = dist * PROPAGATION_SPEED;
 
-		// Row
-		for (var y = 0; y < this.cells.length; ++y) {
-			const currCell = this.cells[y][coords.column];
+				currCell.targetSize =
+					state === cellState.NORMAL
+						? tokens.size
+						: tokens.size - dist * STEPS <= DIAMOND_SIZE
+							? DIAMOND_SIZE
+							: state === cellState.CLICK
+								? tokens.size - dist * (STEPS + 1)
+								: tokens.size - dist * STEPS;
+				currCell.targetColor =
+					state === cellState.NORMAL
+						? tokens.color
+						: tokens.color[tokens.color.length - 1 - dist];
 
-			const dist = Math.abs(y - coords.row);
-			if (dist > EFFECT_LIMIT) continue;
-
-			currCell.delay = dist * PROPAGATION_SPEED;
-
-			currCell.targetSize =
-				state === cellState.NORMAL
-					? tokens.size
-					: tokens.size - dist * STEPS <= DIAMOND_SIZE
-						? DIAMOND_SIZE
-						: state === cellState.CLICK
-							? tokens.size - dist * (STEPS + 1)
-							: tokens.size - dist * STEPS;
-			currCell.targetColor =
-				state === cellState.NORMAL
-					? tokens.color
-					: tokens.color[tokens.color.length - 1 - dist];
-
-			if (currCell.selfState !== state) {
-				currCell.selfState = state;
-				Grid.dirtyCells.push(currCell);
-				currCell.animate(() => {
-					Grid.dirtyCells = Grid.dirtyCells.filter(
-						(c) => c !== currCell,
-					);
-				});
+				if (currCell.selfState !== state) {
+					currCell.selfState = state;
+					Grid.dirtyCells.add(currCell);
+					currCell.animate(() => {
+						Grid.dirtyCells.delete(currCell);
+					});
+				}
 			}
 		}
 	}
@@ -424,9 +399,9 @@ class App {
 	}
 
 	static loop(grid) {
-		Grid.dirtyCells.forEach((cell) => {
+		for (const cell of Grid.dirtyCells) {
 			cell.dynamicRender();
-		});
+		}
 
 		requestAnimationFrame(() => App.loop(grid));
 	}
