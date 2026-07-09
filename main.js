@@ -13,8 +13,9 @@ canvas.style.height = window.innerHeight + "px";
 ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
 // Globals
-const DIAMOND_SIZE = 6;
-const EFFECT_RADIUS = DIAMOND_SIZE * 2;
+const DIAMOND_SIZE = 8;
+const EFFECT_RADIUS = DIAMOND_SIZE * 4;
+const EFFECT_LIMIT = 3;
 
 const HOVER_SIZE = DIAMOND_SIZE * 2;
 const CLICK_SIZE = HOVER_SIZE + 8;
@@ -25,12 +26,132 @@ const GRIDY = 50;
 const GAPX = 35;
 const GAPY = 35;
 
+const ANIMATION_DURATION = 0.2;
+const PROPAGATION_SPEED = 0.09;
+const PULSE_SPEED = 0.3;
+
 // Enums
-const state = Object.freeze({
+const cellState = Object.freeze({
 	NORMAL: 0,
 	HOVER: 1,
 	CLICK: 2,
 });
+
+// For tracking the theme from 'data-theme' attr.
+// Will be used when user clicks dark/light mode button.
+class Theme {
+	static shapeClr;
+	static hoverClr;
+	static clickClr;
+	static rippleClrs = []; // For the ripple generated after clicking. Will prolly use a shade of accent color.
+
+	static init() {
+		const root = document.documentElement;
+		const styles = getComputedStyle(root);
+
+		this.rippleClrs = [];
+
+		for (var i = 1; i <= 5; ++i) {
+			var shade = i * 100;
+
+			this.rippleClrs.push(
+				styles.getPropertyValue(`--canvas-ripple-${shade}`).trim(),
+			);
+		}
+
+		this.hoverClr = this.clickClr = this.rippleClrs[4];
+
+		this.update(this.loadVariables(styles));
+	}
+
+	// Fired when the theme changes
+	static updateOnThemeChange() {
+		const root = document.documentElement;
+		const styles = getComputedStyle(root);
+
+		this.update(this.loadVariables(styles));
+	}
+
+	// Update class variables.
+	static update(colors) {
+		this.shapeClr = colors;
+	}
+
+	static loadVariables(styles) {
+		return styles.getPropertyValue("--canvas-shape").trim();
+	}
+}
+
+// Will fetch the position of the mouse from 'mousemove'
+// Also calculates the row and column.
+class Pointer {
+	static curr = {
+		x: 0,
+		y: 0,
+	};
+
+	static prev = {
+		x: 0,
+		y: 0,
+	};
+
+	static isDown = false;
+
+	// Get the pos of the mouse from 'mousemove'
+	static init(grid) {
+		window.addEventListener("pointermove", (e) => {
+			this.updatePrev(this.curr.x, this.curr.y);
+			this.update(e);
+
+			const coords = grid.calcCell(this.curr.x, this.curr.y);
+			const prevCoords = grid.calcCell(this.prev.x, this.prev.y);
+
+			if (
+				coords === undefined ||
+				prevCoords === undefined ||
+				prevCoords.column !== coords.column ||
+				prevCoords.row !== coords.row
+			)
+				grid.animate(
+					grid.calcCell(this.prev.x, this.prev.y),
+					cellState.NORMAL,
+				);
+
+			grid.animate(coords, cellState.HOVER);
+		});
+
+		window.addEventListener("pointerdown", (e) => {
+			this.update(e);
+			this.isDown = true;
+
+			grid.animate(
+				grid.calcCell(this.curr.x, this.curr.y),
+				cellState.CLICK,
+			);
+		});
+
+		window.addEventListener("pointerup", (e) => {
+			this.update(e);
+			this.isDown = false;
+
+			grid.animate(
+				grid.calcCell(this.curr.x, this.curr.y),
+				cellState.NORMAL,
+			);
+		});
+	}
+
+	// Helper
+	static update(e) {
+		this.curr.x = e.clientX;
+		this.curr.y = e.clientY;
+	}
+
+	static updatePrev(x, y) {
+		this.prev.x = x;
+		this.prev.y = y;
+	}
+}
 
 // For the diamonds and their params.
 // Also the update, draw methods.
@@ -43,12 +164,11 @@ class Cell {
 	color = Theme.shapeClr; // Default color. Based on light/dark mode.
 
 	delay = undefined;
-	animating = false;
 
 	targetSize = undefined; // For required size during animation.
 	targetColor = undefined; // For end point of color change.
 
-	state = state.NORMAL; // For determining if re-rendering is required.
+	selfState = cellState.NORMAL; // For determining if re-rendering is required.
 
 	radius = EFFECT_RADIUS; // Each cell might have different radius.
 
@@ -61,21 +181,17 @@ class Cell {
 	}
 
 	// Animation loop
-	animate() {
-		this.animating = true;
+	animate(onComplete) {
+		gsap.killTweensOf(this);
 
 		gsap.to(this, {
 			size: this.targetSize,
 			color: this.targetColor,
 			ease: "power2.out",
-			duration: 0.5,
+			duration: ANIMATION_DURATION,
 			delay: this.delay,
-			onComplete: () => {
-				this.animating = false;
-			},
+			onComplete,
 		});
-
-		this.dynamicRender();
 	}
 
 	// For use when animating
@@ -130,6 +246,7 @@ class Grid {
 	gapY;
 
 	cells = [];
+	static dirtyCells = [];
 
 	// Constructs the grid. Theming will be pulled from the theme class.
 	constructor(gX, gY, gaX, gaY) {
@@ -142,52 +259,65 @@ class Grid {
 		this.render(DIAMOND_SIZE);
 	}
 
-	// Will start animation.
-	startAnimation(coords) {
+	// Sets delays based on distance.
+	animate(coords, state) {
 		if (coords === undefined) return;
 
-		if (Pointer.isDown) {
-			this.animate(coords, {
-				targetSize: CLICK_SIZE,
-				targetColor: Theme.clickClr,
-				state: state.CLICK,
-			});
-		} else {
-			this.animate(coords, {
-				targetSize: HOVER_SIZE,
-				targetColor: Theme.hoverClr,
-				state: state.HOVER,
-			});
-		}
-	}
+		const tokens = this.lookupValues(state);
+		if (tokens === undefined) return;
 
-	animate(coords, { targetSize, targetColor, state }) {
 		// Column
 		for (var x = 0; x < this.cells[coords.row].length; ++x) {
 			const currCell = this.cells[coords.row][x];
 
-			const delay = Math.abs(x - coords.column) * 0.1;
-			currCell.delay = delay;
+			const dist = Math.abs(x - coords.column);
+			if (dist > EFFECT_LIMIT) continue;
 
-			currCell.targetSize = targetSize;
-			currCell.targetColor = targetColor;
-			currCell.state = state;
+			currCell.delay = dist * PROPAGATION_SPEED;
 
-			currCell.animate();
+			currCell.targetSize =
+				state === cellState.NORMAL ? tokens.size : tokens.size - dist;
+			currCell.targetColor =
+				state === cellState.NORMAL
+					? tokens.color
+					: tokens.color[tokens.color.length - 1 - dist];
+
+			if (currCell.selfState !== state) {
+				currCell.selfState = state;
+				Grid.dirtyCells.push(currCell);
+				currCell.animate(() => {
+					Grid.dirtyCells = Grid.dirtyCells.filter(
+						(c) => c !== currCell,
+					);
+				});
+			}
 		}
 
 		// Row
 		for (var y = 0; y < this.cells.length; ++y) {
 			const currCell = this.cells[y][coords.column];
 
-			const delay = Math.abs(y - coords.row) * 0.1;
-			currCell.delay = delay;
+			const dist = Math.abs(y - coords.row);
+			if (dist > EFFECT_LIMIT) continue;
 
-			currCell.targetSize = targetSize;
-			currCell.targetColor = targetColor;
-			currCell.state = state;
+			currCell.delay = dist * PROPAGATION_SPEED;
 
-			currCell.animate();
+			currCell.targetSize =
+				state === cellState.NORMAL ? tokens.size : tokens.size - dist;
+			currCell.targetColor =
+				state === cellState.NORMAL
+					? tokens.color
+					: tokens.color[tokens.color.length - 1 - dist];
+
+			if (currCell.selfState !== state) {
+				currCell.selfState = state;
+				Grid.dirtyCells.push(currCell);
+				currCell.animate(() => {
+					Grid.dirtyCells = Grid.dirtyCells.filter(
+						(c) => c !== currCell,
+					);
+				});
+			}
 		}
 	}
 
@@ -216,10 +346,7 @@ class Grid {
 	}
 
 	// Calculates effect radius.
-	calcCell() {
-		const px = Pointer.x;
-		const py = Pointer.y;
-
+	calcCell(px, py) {
 		const rawColumn = Math.floor(
 			(px - this.gridX + this.gapX / 2) / this.gapX,
 		);
@@ -237,87 +364,22 @@ class Grid {
 		const dist = Math.hypot(px - cell.x, py - cell.y);
 
 		if (dist <= cell.radius) {
-			return { row, column };
-		}
-	}
-}
-
-// For tracking the theme from 'data-theme' attr.
-// Will be used when user clicks dark/light mode button.
-class Theme {
-	static shapeClr;
-	static hoverClr;
-	static clickClr;
-	static rippleClrs; // For the ripple generated after clicking. Will prolly use a shade of accent color.
-
-	static init() {
-		const root = document.documentElement;
-		const styles = getComputedStyle(root);
-
-		this.rippleClrs = [];
-
-		for (var i = 1; i <= 9; ++i) {
-			var shade = i * 100;
-
-			this.rippleClrs.push(
-				styles.getPropertyValue(`--canvas-ripple-${shade}`).trim(),
-			);
-		}
-
-		this.hoverClr = this.clickClr = this.rippleClrs[4];
-
-		this.update(this.loadVariables(styles));
-	}
-
-	// Fired when the theme changes
-	static updateOnThemeChange() {
-		const root = document.documentElement;
-		const styles = getComputedStyle(root);
-
-		this.update(this.loadVariables(styles));
-	}
-
-	// Update class variables.
-	static update(colors) {
-		this.shapeClr = colors;
-	}
-
-	static loadVariables(styles) {
-		return styles.getPropertyValue("--canvas-shape").trim();
-	}
-}
-
-// Will fetch the position of the mouse from 'mousemove'
-// Also calculates the row and column.
-class Pointer {
-	static x = 0;
-	static y = 0;
-
-	static isDown = false;
-
-	// Get the pos of the mouse from 'mousemove'
-	static init() {
-		this.on(["pointermove", "pointerdown", "pointerup"], (e) => {
-			this.update(e);
-		});
-	}
-
-	// Helpers
-	static update(e) {
-		this.x = e.clientX;
-		this.y = e.clientY;
-
-		if (e.type === "pointerdown") {
-			this.isDown = true;
-		} else if (e.type === "pointerup") {
-			this.isDown = false;
+			return { column, row };
 		}
 	}
 
-	static on(events, callback) {
-		events.forEach((e) => {
-			window.addEventListener(e, callback);
-		});
+	// State based lookup
+	lookupValues(currState) {
+		switch (currState) {
+			case cellState.CLICK:
+				return { size: CLICK_SIZE, color: Theme.rippleClrs };
+			case cellState.HOVER:
+				return { size: HOVER_SIZE, color: Theme.rippleClrs };
+			case cellState.NORMAL:
+				return { size: DIAMOND_SIZE, color: [Theme.shapeClr] };
+			default:
+				return undefined;
+		}
 	}
 }
 
@@ -332,14 +394,17 @@ class App {
 	// Aux functions
 	static init() {
 		Theme.init();
-		Pointer.init();
 		const grid = new Grid(GRIDX, GRIDY, GAPX, GAPY);
+		Pointer.init(grid);
 
 		return grid;
 	}
 
 	static loop(grid) {
-		grid.startAnimation(grid.calcCell());
+		Grid.dirtyCells.forEach((cell) => {
+			cell.dynamicRender();
+		});
+
 		requestAnimationFrame(() => App.loop(grid));
 	}
 }
