@@ -273,7 +273,6 @@ class Grid {
 		const tokens = this.lookupValues(state);
 		if (tokens === undefined) return;
 
-		// Clamp coords
 		const startY = Math.max(0, coords.row - EFFECT_LIMIT);
 		const endY = Math.min(this.cells.length - 1, coords.row + EFFECT_LIMIT);
 
