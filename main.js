@@ -14,11 +14,12 @@ ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
 // Globals
 const DIAMOND_SIZE = 8;
-const EFFECT_RADIUS = DIAMOND_SIZE * 4;
+const EFFECT_RADIUS = DIAMOND_SIZE * 2;
 const EFFECT_LIMIT = 3;
 
 const HOVER_SIZE = DIAMOND_SIZE * 2;
-const CLICK_SIZE = HOVER_SIZE + 8;
+const CLICK_SIZE = HOVER_SIZE + 6;
+const STEPS = 3;
 
 const GRIDX = 58;
 const GRIDY = 50;
@@ -112,12 +113,13 @@ class Pointer {
 				prevCoords.column !== coords.column ||
 				prevCoords.row !== coords.row
 			)
-				grid.animate(
-					grid.calcCell(this.prev.x, this.prev.y),
-					cellState.NORMAL,
-				);
+				grid.animate(prevCoords, cellState.NORMAL);
 
-			grid.animate(coords, cellState.HOVER);
+			if (this.isDown) {
+				grid.animate(coords, cellState.CLICK);
+			} else {
+				grid.animate(coords, cellState.HOVER);
+			}
 		});
 
 		window.addEventListener("pointerdown", (e) => {
@@ -131,13 +133,22 @@ class Pointer {
 		});
 
 		window.addEventListener("pointerup", (e) => {
+			this.updatePrev(this.curr.x, this.curr.y);
 			this.update(e);
 			this.isDown = false;
 
-			grid.animate(
-				grid.calcCell(this.curr.x, this.curr.y),
-				cellState.NORMAL,
-			);
+			const coords = grid.calcCell(this.curr.x, this.curr.y);
+			const prevCoords = grid.calcCell(this.prev.x, this.prev.y);
+
+			if (
+				coords === undefined ||
+				prevCoords === undefined ||
+				prevCoords.column !== coords.column ||
+				prevCoords.row !== coords.row
+			)
+				grid.animate(prevCoords, cellState.NORMAL);
+
+			grid.animate(coords, cellState.HOVER);
 		});
 	}
 
@@ -197,7 +208,7 @@ class Cell {
 	// For use when animating
 	dynamicRender() {
 		const offset = this.size / Math.SQRT2;
-		const padding = 2;
+		const padding = 4;
 
 		ctx.clearRect(
 			this.x - offset - padding,
@@ -276,7 +287,13 @@ class Grid {
 			currCell.delay = dist * PROPAGATION_SPEED;
 
 			currCell.targetSize =
-				state === cellState.NORMAL ? tokens.size : tokens.size - dist;
+				state === cellState.NORMAL
+					? tokens.size
+					: tokens.size - dist * STEPS <= DIAMOND_SIZE
+						? DIAMOND_SIZE
+						: state === cellState.CLICK
+							? tokens.size - dist * (STEPS + 1)
+							: tokens.size - dist * STEPS;
 			currCell.targetColor =
 				state === cellState.NORMAL
 					? tokens.color
@@ -303,7 +320,13 @@ class Grid {
 			currCell.delay = dist * PROPAGATION_SPEED;
 
 			currCell.targetSize =
-				state === cellState.NORMAL ? tokens.size : tokens.size - dist;
+				state === cellState.NORMAL
+					? tokens.size
+					: tokens.size - dist * STEPS <= DIAMOND_SIZE
+						? DIAMOND_SIZE
+						: state === cellState.CLICK
+							? tokens.size - dist * (STEPS + 1)
+							: tokens.size - dist * STEPS;
 			currCell.targetColor =
 				state === cellState.NORMAL
 					? tokens.color
