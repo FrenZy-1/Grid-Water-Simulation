@@ -14,7 +14,7 @@ ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
 // Globals
 const DIAMOND_SIZE = 8;
-const EFFECT_RADIUS = DIAMOND_SIZE * 3;
+const EFFECT_RADIUS = DIAMOND_SIZE * 3.2;
 const EFFECT_LIMIT = 3;
 
 const HOVER_SIZE = DIAMOND_SIZE * 2;
@@ -27,8 +27,8 @@ const GRIDY = 50;
 const GAPX = 35;
 const GAPY = 35;
 
-const ANIMATION_DURATION = 0.2;
-const PROPAGATION_SPEED = 0.09;
+const ANIMATION_DURATION = 0.3;
+const PROPAGATION_SPEED = 0.003;
 const PULSE_SPEED = 0.3;
 
 // Enums
