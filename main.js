@@ -31,8 +31,10 @@ const ANIMATION_DURATION = 0.3;
 const HOVER_PROPAGATION_SPEED = 0.003;
 const CLICK_PROPAGATION_SPEED = 0.2;
 
-const PULSE_SPEED = 0.3;
-const WAVE_WIDTH = EFFECT_LIMIT * 2;
+const BASE_WAVE_SPEED = 60.5;
+const WAVE_PEAK_DELAY = 1;
+const WAVE_WIDTH = 20;
+const WAVE_DAMPENING = 0.1;
 
 // Enums
 const cellState = Object.freeze({
@@ -118,12 +120,12 @@ class Pointer {
 				prevCoords.column !== coords.column ||
 				prevCoords.row !== coords.row
 			)
-				grid.animate(prevCoords, cellState.NORMAL);
+				grid.animate(prevCoords, cellState.NORMAL, "power2.out");
 
 			if (this.isDown) {
-				grid.animate(coords, cellState.CLICK);
+				grid.animate(coords, cellState.CLICK, "power2.out");
 			} else {
-				grid.animate(coords, cellState.HOVER);
+				grid.animate(coords, cellState.HOVER, "power2.out");
 			}
 		});
 
@@ -135,22 +137,27 @@ class Pointer {
 			grid.animate(
 				grid.calcCell(this.curr.x, this.curr.y),
 				cellState.CLICK,
+				"power2.in",
 			);
 		});
 
 		window.addEventListener("pointerup", (e) => {
 			this.update(e);
 			this.isDown = false;
-			this.intensity = (performance.now() - this.intensity) / 1000;
+			this.intensity = Math.min(
+				(performance.now() - this.intensity) / 1000,
+				1,
+			);
 
 			const coords = grid.calcCell(this.curr.x, this.curr.y);
 
 			if (e.pointerType === "touch") {
-				grid.animate(coords, cellState.NORMAL);
+				grid.animate(coords, cellState.NORMAL, "power2.out");
 				return;
 			}
 
-			grid.animate(coords, cellState.HOVER);
+			grid.wave(coords, this.intensity);
+			grid.animate(coords, cellState.HOVER, "power2.in");
 		});
 	}
 
@@ -177,6 +184,7 @@ class Cell {
 	color = Theme.shapeClr; // Default color. Based on light/dark mode.
 
 	delay = undefined;
+	isRippling = false;
 
 	targetSize = undefined; // For required size during animation.
 	targetColor = undefined; // For end point of color change.
@@ -194,13 +202,14 @@ class Cell {
 	}
 
 	// Animation loop
-	animate(onComplete) {
+	animate(ease, onComplete) {
+		if (this.selfState === cellState.CLICK && this.isRippling) return;
 		gsap.killTweensOf(this);
 
 		gsap.to(this, {
 			size: this.targetSize,
 			color: this.targetColor,
-			ease: "power2.out",
+			ease: ease,
 			duration: ANIMATION_DURATION,
 			delay: this.delay,
 			onComplete,
@@ -273,7 +282,7 @@ class Grid {
 	}
 
 	// Sets delays based on distance.
-	animate(coords, state) {
+	animate(coords, state, ease) {
 		if (coords === undefined) return;
 
 		const tokens = this.lookupValues(state);
@@ -316,11 +325,65 @@ class Grid {
 						? tokens.color
 						: tokens.color[tokens.color.length - 1 - dist];
 
-				if (currCell.selfState !== state) {
+				if (currCell.selfState !== state && !currCell.isRippling) {
 					currCell.selfState = state;
 					Grid.dirtyCells.add(currCell);
-					currCell.animate(() => {
+					currCell.animate(ease, () => {
 						Grid.dirtyCells.delete(currCell);
+					});
+				}
+			}
+		}
+	}
+
+	wave(coords, intensity) {
+		if (coords === undefined) return;
+
+		for (var y = 0; y < this.cells.length; ++y) {
+			for (var x = 0; x < this.cells[y].length; ++x) {
+				const currCell = this.cells[y][x];
+
+				const dist = Math.round(
+					Math.hypot(coords.column - x, coords.row - y),
+				);
+				const normDist = dist / WAVE_WIDTH;
+
+				if (dist > WAVE_WIDTH) continue;
+
+				currCell.delay = dist / (intensity * BASE_WAVE_SPEED);
+				currCell.targetSize =
+					CLICK_SIZE - (1 - normDist) * (CLICK_SIZE - DIAMOND_SIZE);
+				currCell.targetColor =
+					Theme.rippleClrs[
+						Math.floor((1 - normDist) * Theme.rippleClrs.length)
+					];
+
+				if (currCell.selfState !== cellState.CLICK) {
+					currCell.selfState = cellState.CLICK;
+					currCell.isRippling = true;
+					Grid.dirtyCells.add(currCell);
+
+					gsap.killTweensOf(currCell);
+					gsap.to(currCell, {
+						size: currCell.targetSize,
+						color: currCell.targetColor,
+						ease: "power2.out",
+						duration: ANIMATION_DURATION,
+						delay: currCell.delay,
+						onComplete: () => {
+							gsap.to(currCell, {
+								size: DIAMOND_SIZE,
+								color: Theme.shapeClr,
+								ease: "power2.in",
+								duration: ANIMATION_DURATION,
+								delay: currCell.delay * WAVE_PEAK_DELAY,
+								onComplete: () => {
+									currCell.isRippling = false;
+									currCell.selfState = cellState.NORMAL;
+									Grid.dirtyCells.delete(currCell);
+								},
+							});
+						},
 					});
 				}
 			}
