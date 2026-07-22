@@ -1,6 +1,6 @@
 import { Config } from "../shared/config.js";
 
-import { ctx } from "../canvas/canvas.js";
+import { Canvas } from "../canvas/canvas.js";
 import { Theme } from "../theme/theme.js";
 
 class Cell {
@@ -49,7 +49,7 @@ class Cell {
 		const offset = this.size / Math.SQRT2;
 		const padding = 4;
 
-		ctx.clearRect(
+		Canvas.ctx.clearRect(
 			this.x - offset - padding,
 			this.y - offset - padding,
 			offset * 2 + padding * 2,
@@ -62,27 +62,27 @@ class Cell {
 	// Render from center
 	staticRender() {
 		// Set the style
-		ctx.fillStyle = this.color;
+		Canvas.ctx.fillStyle = this.color;
 
 		// Calc the offset
 		const offset = this.size / Math.SQRT2;
 
 		// Start drawing the diamond
-		ctx.beginPath();
-		ctx.moveTo(this.x, this.y);
+		Canvas.ctx.beginPath();
+		Canvas.ctx.moveTo(this.x, this.y);
 
 		// Move to the remaining points
-		ctx.lineTo(this.x, this.y - offset);
-		ctx.lineTo(this.x + offset, this.y);
-		ctx.lineTo(this.x, this.y + offset);
-		ctx.lineTo(this.x - offset, this.y);
-		ctx.lineTo(this.x, this.y - offset);
+		Canvas.ctx.lineTo(this.x, this.y - offset);
+		Canvas.ctx.lineTo(this.x + offset, this.y);
+		Canvas.ctx.lineTo(this.x, this.y + offset);
+		Canvas.ctx.lineTo(this.x - offset, this.y);
+		Canvas.ctx.lineTo(this.x, this.y - offset);
 
 		// Close the path
-		ctx.closePath();
+		Canvas.ctx.closePath();
 
 		// Fill the shape
-		ctx.fill();
+		Canvas.ctx.fill();
 	}
 }
 

@@ -1,5 +1,6 @@
 import { Config } from "./shared/config.js";
 
+import { Canvas } from "./canvas/canvas.js";
 import { Grid } from "./background/grid.js";
 import { Theme } from "./theme/theme.js";
 import { Pointer } from "./background/pointer.js";
@@ -14,12 +15,11 @@ class App {
 	// Aux functions
 	static init() {
 		Theme.init();
-		const grid = new Grid(
-			Config.grid.offset.top,
-			Config.grid.offset.left,
-			Config.grid.gap.column,
-			Config.grid.gap.row,
-		);
+		Canvas.init();
+		const grid = new Grid(Config.grid.gap.column, Config.grid.gap.row);
+		Canvas.onResize = () => {
+			grid.build();
+		};
 		Pointer.init(grid);
 
 		return grid;

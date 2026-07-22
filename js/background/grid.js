@@ -1,30 +1,70 @@
 import { Config } from "../shared/config.js";
 
-import { canvas } from "../canvas/canvas.js";
+import { Canvas } from "../canvas/canvas.js";
 import { Theme } from "../theme/theme.js";
 
 import { Cell } from "./cell.js";
 
 class Grid {
-	gridX;
-	gridY;
+	margin = {
+		top: Config.grid.margin.top,
+		left: Config.grid.margin.left,
+		bottom: Config.grid.margin.bottom,
+		right: Config.grid.margin.right,
+	};
 
 	gapX;
 	gapY;
+
+	startX;
+	startY;
 
 	cells = [];
 	static dirtyCells = new Set();
 
 	// Constructs the grid. Theming will be pulled from the theme class.
-	constructor(gX, gY, gaX, gaY) {
-		this.gridX = gX;
-		this.gridY = gY;
-
+	constructor(gaX, gaY) {
 		this.gapX = gaX;
 		this.gapY = gaY;
 
-		this.create(Config.cell.state.normal.size);
-		this.render();
+		this.build();
+	}
+
+	// Build the grid on page load or on resize
+	build() {
+		this.cells = [];
+		Grid.dirtyCells.clear();
+
+		const validDrawWidth =
+			Canvas.canvas.clientWidth - this.margin.left - this.margin.right;
+		const validDrawHeight =
+			Canvas.canvas.clientHeight - this.margin.top - this.margin.bottom;
+
+		const columns = Math.floor(validDrawWidth / this.gapX);
+		const rows = Math.floor(validDrawHeight / this.gapY);
+
+		const gridWidth = (columns - 1) * this.gapX;
+		const gridHeight = (rows - 1) * this.gapY;
+
+		this.startX = this.margin.left + (validDrawWidth - gridWidth) / 2;
+		this.startY = this.margin.top + (validDrawHeight - gridHeight) / 2;
+
+		for (var row = 0; row < rows; ++row) {
+			var rowArr = [];
+
+			for (var column = 0; column < columns; ++column) {
+				const cell = new Cell(
+					this.startX + column * this.gapX,
+					this.startY + row * this.gapY,
+					Config.cell.state.normal.size,
+				);
+				cell.staticRender();
+
+				rowArr.push(cell);
+			}
+
+			this.cells.push(rowArr);
+		}
 	}
 
 	// Sets delays based on distance.
@@ -145,43 +185,13 @@ class Grid {
 		}
 	}
 
-	// Create grid without rendering
-	create() {
-		for (
-			var i = this.gridY;
-			i < canvas.clientHeight - this.gapY;
-			i += this.gapY
-		) {
-			var row = [];
-
-			for (
-				var j = this.gridX;
-				j < canvas.clientWidth - this.gapX;
-				j += this.gapX
-			) {
-				const cell = new Cell(j, i, Config.cell.state.normal.size);
-				row.push(cell);
-			}
-
-			this.cells.push(row);
-		}
-	}
-
-	render() {
-		this.cells.forEach((row) => {
-			row.forEach((cell) => {
-				cell.staticRender();
-			});
-		});
-	}
-
 	// Calculates effect radius.
 	calcCell(px, py) {
 		const rawColumn = Math.floor(
-			(px - this.gridX + this.gapX / 2) / this.gapX,
+			(px - this.startX + this.gapX / 2) / this.gapX,
 		);
 		const rawRow = Math.floor(
-			(py - this.gridY + this.gapY / 2) / this.gapY,
+			(py - this.startY + this.gapY / 2) / this.gapY,
 		);
 
 		const column = Math.max(
@@ -219,11 +229,6 @@ class Grid {
 			default:
 				return undefined;
 		}
-	}
-
-	// Center the grid before rendering
-	center() {
-		// const w = ;
 	}
 }
 

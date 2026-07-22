@@ -1,8 +1,10 @@
 export const Config = {
 	grid: {
-		offset: {
+		margin: {
 			top: 40,
 			left: 40,
+			bottom: 40,
+			right: 40,
 		},
 
 		gap: {
