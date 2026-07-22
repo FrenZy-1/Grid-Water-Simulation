@@ -1,10 +1,3 @@
-class Wave {
-	x;
-	y;
-
-	speed;
-
-	amplitude;
-	frequency;
-	wavelength;
+class WaveEngine {
+	waveBuffer = [];
 }
