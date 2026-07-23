@@ -15,17 +15,11 @@
 :root[data-theme=light] {
     --bg: #F2EED5;
     --canvas-shape: #1E2F3E;
-    
-    --canvas-hover: var(--canvas-ripple-500);
-    --canvas-click: var(--canvas-ripple-500);
 }
 
 :root[data-theme=dark] {
     --bg: #1E2F3E;
     --canvas-shape: #F2EED5;
-    
-    --canvas-hover: var(--canvas-ripple-500);
-    --canvas-click: var(--canvas-ripple-500);
 }
 
 * {

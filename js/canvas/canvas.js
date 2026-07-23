@@ -12,8 +12,17 @@ class Canvas {
 		});
 	}
 
+	static update() {
+		this.ctx.clearRect(
+			0,
+			0,
+			this.canvas.clientWidth,
+			this.canvas.clientHeight,
+		);
+	}
+
 	static setDimensions() {
-		Canvas.ctx.clearRect(0, 0, Canvas.canvas.width, Canvas.canvas.height);
+		this.update();
 
 		const dpr = window.devicePixelRatio || 1;
 
@@ -28,10 +37,7 @@ class Canvas {
 
 	static resize() {
 		this.setDimensions();
-
-		if (this.onResize) {
-			this.onResize();
-		}
+		this.onResize?.();
 	}
 }
 
