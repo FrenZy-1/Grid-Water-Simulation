@@ -15,9 +15,9 @@ class WaveEngine {
 		const maxDist = Math.max(0.1, Math.sqrt(centerR ** 2 + centerC ** 2));
 
 		for (let r = 0; r < rows; ++r) {
-			let bufferRow = [];
+			let waveBufferRow = [];
 			for (let c = 0; c < columns; ++c) {
-				const bufferCell = {
+				const waveBufferCell = {
 					height: 0,
 					velocity: 0,
 					depth: 0,
@@ -26,15 +26,15 @@ class WaveEngine {
 				};
 
 				const dist = Math.sqrt((r - centerR) ** 2 + (c - centerC) ** 2);
-				bufferCell.depth = Math.max(
+				waveBufferCell.depth = Math.max(
 					Math.pow(1 - dist / maxDist, Config.wave.depth.falloff),
 					Config.wave.depth.min,
 				);
 
-				bufferRow.push(bufferCell);
+				waveBufferRow.push(waveBufferCell);
 			}
 
-			this.waveBuffer.push(bufferRow);
+			this.waveBuffer.push(waveBufferRow);
 		}
 	}
 
@@ -75,10 +75,10 @@ class WaveEngine {
 		}
 	}
 
-	static laplacian(c, r, valueId) {
+	static laplacian(c, r, fieldType) {
 		let sum = 0;
 		let weight = 0;
-		const key = valueId === this.sampleTarget.HEIGHT ? "height" : "lap";
+		const key = fieldType === this.sampleTarget.HEIGHT ? "height" : "lap";
 
 		for (let dr = -1; dr < 2; ++dr) {
 			for (let dc = -1; dc < 2; ++dc) {

@@ -77,22 +77,27 @@ class Grid {
 	// Render the all the cells
 	render() {
 		this.cells.forEach((row, i) => {
-			const bufferRow = this.waveBuffer?.[i];
-			if (!bufferRow) return;
+			const waveBufferRow = this.waveBuffer?.[i];
+			if (!waveBufferRow) return;
 
 			row.forEach((cell, j) => {
-				const bufferCell = bufferRow[j];
+				const waveBufferCell = waveBufferRow[j];
 
 				const size =
 					Config.cell.size +
-					bufferCell.height * Config.cell.maxHeight;
-				const t = Math.min(Math.abs(bufferCell.height), 4) / 4; // 0 → 1
+					waveBufferCell.height * Config.cell.maxHeight;
+				const normalizedHeight =
+					Math.min(Math.abs(waveBufferCell.height), 4) / 4; // 0 → 1
 				const color =
-					t < 0.01
+					normalizedHeight < 0.01
 						? Theme.shapeClr
-						: // : Theme.rippleClrs[Math.min(Math.floor(t * 5), 4)];
+						: // : Theme.rippleClrs[Math.min(Math.floor(normalizedHeight * 5), 4)];
 							Theme.rippleClrs[
-								4 - Math.min(Math.floor(t * 5), 4)
+								4 -
+									Math.min(
+										Math.floor(normalizedHeight * 5),
+										4,
+									)
 							];
 
 				cell.draw(size, color);

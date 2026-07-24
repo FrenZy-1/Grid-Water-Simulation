@@ -19,17 +19,22 @@ class App {
 		Canvas.init();
 
 		const grid = new Grid(Config.grid.gap.column, Config.grid.gap.row);
-		if (!grid.cells.length || !grid.cells[0]?.length) {
+		const rows = grid.cells.length;
+		const columns = grid.cells[0].length;
+		if (!rows || !columns) {
 			return;
 		}
 
 		Canvas.onResize = () => {
 			grid.build();
-			WaveEngine.init(grid.cells[0].length, grid.cells.length);
+			rows = grid.cells.length;
+			columns = grid.cells[0].length;
+
+			WaveEngine.init(columns, rows);
 			grid.waveBuffer = WaveEngine.waveBuffer;
 		};
 
-		WaveEngine.init(grid.cells[0].length, grid.cells.length);
+		WaveEngine.init(columns, rows);
 		grid.waveBuffer = WaveEngine.waveBuffer;
 
 		Pointer.init();
