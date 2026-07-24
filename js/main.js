@@ -19,7 +19,9 @@ class App {
 		Canvas.init();
 
 		const grid = new Grid(Config.grid.gap.column, Config.grid.gap.row);
-		if (!grid.cells.length) return;
+		if (!grid.cells.length || !grid.cells[0]?.length) {
+			return;
+		}
 
 		Canvas.onResize = () => {
 			grid.build();
