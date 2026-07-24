@@ -22,10 +22,9 @@ class Cell {
 
 		// Start drawing the diamond
 		Canvas.ctx.beginPath();
-		Canvas.ctx.moveTo(this.x, this.y);
+		Canvas.ctx.moveTo(this.x, this.y - offset);
 
 		// Move to the remaining points
-		Canvas.ctx.lineTo(this.x, this.y - offset);
 		Canvas.ctx.lineTo(this.x + offset, this.y);
 		Canvas.ctx.lineTo(this.x, this.y + offset);
 		Canvas.ctx.lineTo(this.x - offset, this.y);

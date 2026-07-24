@@ -12,11 +12,11 @@ class WaveEngine {
 
 		const centerR = Math.floor(rows / 2);
 		const centerC = Math.floor(columns / 2);
-		const maxDist = Math.max(0, Math.sqrt(centerR ** 2 + centerC ** 2));
+		const maxDist = Math.max(0.1, Math.sqrt(centerR ** 2 + centerC ** 2));
 
-		for (var r = 0; r < rows; ++r) {
-			var bufferRow = [];
-			for (var c = 0; c < columns; ++c) {
+		for (let r = 0; r < rows; ++r) {
+			let bufferRow = [];
+			for (let c = 0; c < columns; ++c) {
 				const bufferCell = {
 					height: 0,
 					velocity: 0,
@@ -41,13 +41,13 @@ class WaveEngine {
 	static update() {
 		this.waveBuffer.forEach((row, r) => {
 			row.forEach((cell, c) => {
-				cell.lap = this.averageSample(c, r, this.sampleTarget.HEIGHT);
+				cell.lap = this.laplacian(c, r, this.sampleTarget.HEIGHT);
 			});
 		});
 
 		this.waveBuffer.forEach((row, r) => {
 			row.forEach((cell, c) => {
-				const lap2 = this.averageSample(c, r, this.sampleTarget.LAP);
+				const lap2 = this.laplacian(c, r, this.sampleTarget.LAP);
 				cell.spreadForce =
 					cell.lap * Config.wave.spread * cell.depth -
 					lap2 * Config.wave.dispersion;
@@ -66,37 +66,33 @@ class WaveEngine {
 
 	static inject(c, r, dist, force) {
 		const sigma = Config.wave.effect.radius / 2;
-		const f = Math.exp(-(dist * dist) / (2 * sigma * sigma)) * force;
-		this.waveBuffer[r]?.[c] && (this.waveBuffer[r][c].velocity += f);
+		const gaussianForce =
+			Math.exp(-(dist * dist) / (2 * sigma * sigma)) * force;
+		const cell = this.waveBuffer[r]?.[c];
+
+		if (cell) {
+			cell.velocity += gaussianForce;
+		}
 	}
 
-	static averageSample(c, r, valueId) {
-		var sum = 0;
-		var weight = 0;
+	static laplacian(c, r, valueId) {
+		let sum = 0;
+		let weight = 0;
+		const key = valueId === this.sampleTarget.HEIGHT ? "height" : "lap";
 
-		for (var row = -1; row < 2; ++row) {
-			for (var col = -1; col < 2; ++col) {
-				const currCell = this.waveBuffer[r + row]?.[c + col];
-				if (row === 0 && col === 0) continue;
+		for (let dr = -1; dr < 2; ++dr) {
+			for (let dc = -1; dc < 2; ++dc) {
+				const currCell = this.waveBuffer[r + dr]?.[c + dc];
+				if (dr === 0 && dc === 0) continue;
 
-				const tempW = col !== 0 && row !== 0 ? 0.707 : 1;
+				const neighbourWeight = dc !== 0 && dr !== 0 ? 0.707 : 1;
 
-				sum += this.sampleNeighbour(
-					valueId === this.sampleTarget.HEIGHT
-						? currCell?.height
-						: currCell?.lap,
-					tempW,
-				);
-				weight += tempW;
+				sum += this.sampleNeighbour(currCell?.[key], neighbourWeight);
+				weight += neighbourWeight;
 			}
 		}
 
-		return (
-			sum / weight -
-			(valueId === this.sampleTarget.HEIGHT
-				? this.waveBuffer[r]?.[c]?.height
-				: this.waveBuffer[r]?.[c]?.lap)
-		);
+		return sum / weight - this.waveBuffer[r][c][key];
 	}
 
 	static sampleNeighbour(value, weight) {

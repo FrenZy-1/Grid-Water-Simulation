@@ -1,10 +1,13 @@
 class Canvas {
-	static canvas = document.getElementById("mainCanvas");
-	static ctx = this.canvas.getContext("2d");
+	static canvas;
+	static ctx;
 
 	static onResize = null;
 
 	static init() {
+		this.canvas = document.getElementById("mainCanvas");
+		this.ctx = this.canvas.getContext("2d");
+
 		this.setDimensions();
 
 		window.addEventListener("resize", () => {

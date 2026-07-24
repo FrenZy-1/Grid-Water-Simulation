@@ -27,10 +27,10 @@ class Grid {
 	waveBuffer;
 
 	// Constructs the grid. Theming will be pulled from the theme class.
-	constructor(gaX, gaY) {
+	constructor(gapX, gapY) {
 		this.gap = {
-			x: gaX,
-			y: gaY,
+			x: gapX,
+			y: gapY,
 		};
 
 		this.start = {
@@ -59,10 +59,10 @@ class Grid {
 		this.start.x = this.margin.left + (validDrawWidth - gridWidth) / 2;
 		this.start.y = this.margin.top + (validDrawHeight - gridHeight) / 2;
 
-		for (var row = 0; row < rows; ++row) {
-			var rowArr = [];
+		for (let row = 0; row < rows; ++row) {
+			let rowArr = [];
 
-			for (var column = 0; column < columns; ++column) {
+			for (let column = 0; column < columns; ++column) {
 				const cell = new Cell(
 					this.start.x + column * this.gap.x,
 					this.start.y + row * this.gap.y,
@@ -77,7 +77,8 @@ class Grid {
 	// Render the all the cells
 	render() {
 		this.cells.forEach((row, i) => {
-			const bufferRow = this.waveBuffer[i];
+			const bufferRow = this.waveBuffer?.[i];
+			if (!bufferRow) return;
 
 			row.forEach((cell, j) => {
 				const bufferCell = bufferRow[j];

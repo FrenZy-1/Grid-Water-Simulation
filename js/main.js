@@ -19,6 +19,8 @@ class App {
 		Canvas.init();
 
 		const grid = new Grid(Config.grid.gap.column, Config.grid.gap.row);
+		if (!grid.cells.length) return;
+
 		Canvas.onResize = () => {
 			grid.build();
 			WaveEngine.init(grid.cells[0].length, grid.cells.length);
@@ -69,8 +71,8 @@ class App {
 		);
 		const rowEnd = Math.ceil((mouseY + radius - grid.start.y) / grid.gap.y);
 
-		for (var r = rowStart; r <= rowEnd; r++) {
-			for (var c = colStart; c <= colEnd; c++) {
+		for (let r = rowStart; r <= rowEnd; r++) {
+			for (let c = colStart; c <= colEnd; c++) {
 				const cell = grid.cells[r]?.[c];
 				if (!cell) continue;
 

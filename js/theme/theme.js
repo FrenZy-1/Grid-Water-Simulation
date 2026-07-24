@@ -8,8 +8,8 @@ class Theme {
 	static init() {
 		this.rippleClrs = [];
 
-		for (var i = 1; i <= 5; ++i) {
-			var shade = i * 100;
+		for (let i = 1; i <= 5; ++i) {
+			let shade = i * 100;
 
 			this.rippleClrs.push(
 				this.styles.getPropertyValue(`--canvas-ripple-${shade}`).trim(),
