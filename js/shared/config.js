@@ -14,22 +14,27 @@ export const Config = {
 
 	cell: {
 		size: 2,
-		maxHeight: 1,
+		maxHeight: 2,
 	},
 
 	wave: {
-		spring: 0.035, // Higher: wave dies down faster
-		damping: 0.951, // Higher: Less energy lost
-		spread: 0.3,
+		spring: 0.0253, // Higher: wave dies down faster
+		damping: 0.962, // Higher: Less energy lost
+		spread: 0.5,
+		dispersion: 0.003,
 		force: {
-			hover: 3,
-			click: 16,
+			hover: 2.5,
+			click: 14,
 		},
 		effect: {
-			scale: 12,
+			scale: 8,
 			get radius() {
 				return Config.cell.size * this.scale;
 			},
+		},
+		depth: {
+			min: 0.2,
+			falloff: 0.05,
 		},
 	},
 };

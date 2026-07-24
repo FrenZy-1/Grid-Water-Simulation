@@ -85,11 +85,14 @@ class Grid {
 				const size =
 					Config.cell.size +
 					bufferCell.height * Config.cell.maxHeight;
-				const index = Math.min(Math.abs(bufferCell.height), 4) / 4;
+				const t = Math.min(Math.abs(bufferCell.height), 4) / 4; // 0 → 1
 				const color =
-					index < 0.01
+					t < 0.01
 						? Theme.shapeClr
-						: Theme.rippleClrs[Math.floor(index * 5)];
+						: // : Theme.rippleClrs[Math.min(Math.floor(t * 5), 4)];
+							Theme.rippleClrs[
+								4 - Math.min(Math.floor(t * 5), 4)
+							];
 
 				cell.draw(size, color);
 			});

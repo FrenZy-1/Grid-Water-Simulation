@@ -28,16 +28,19 @@ class App {
 
 		Pointer.init();
 		Pointer.onMove = () => {
-			App.injectWave(Pointer.curr.x, Pointer.curr.y, grid);
+			App.injectWave(
+				Pointer.curr.x,
+				Pointer.curr.y,
+				grid,
+				Config.wave.force.hover,
+			);
 		};
 		Pointer.onUp = () => {
-			const r = Math.round((Pointer.curr.y - grid.start.y) / grid.gap.y);
-			const c = Math.round((Pointer.curr.x - grid.start.x) / grid.gap.x);
-
-			WaveEngine.inject(
-				c,
-				r,
-				Config.wave.force.click * Pointer.intensity,
+			App.injectWave(
+				Pointer.curr.x,
+				Pointer.curr.y,
+				grid,
+				Config.wave.force.click * Math.max(Pointer.intensity, 0.4),
 			);
 		};
 
@@ -52,7 +55,7 @@ class App {
 		requestAnimationFrame(() => App.loop(grid));
 	}
 
-	static injectWave(mouseX, mouseY, grid) {
+	static injectWave(mouseX, mouseY, grid, force) {
 		const radius = Config.wave.effect.radius;
 
 		const colStart = Math.floor(
@@ -74,13 +77,7 @@ class App {
 				const dist = Math.sqrt(dx * dx + dy * dy);
 				if (dist > radius) continue;
 
-				const sigma = radius / 3;
-				WaveEngine.inject(
-					c,
-					r,
-					Math.exp(-(dist * dist) / (2 * sigma * sigma)) *
-						Config.wave.force.hover,
-				);
+				WaveEngine.inject(c, r, dist, force);
 			}
 		}
 	}
