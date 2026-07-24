@@ -19,8 +19,8 @@ class App {
 		Canvas.init();
 
 		const grid = new Grid(Config.grid.gap.column, Config.grid.gap.row);
-		const rows = grid.cells.length;
-		const columns = grid.cells[0].length;
+		let rows = grid.cells.length;
+		let columns = grid.cells[0].length;
 		if (!rows || !columns) {
 			return;
 		}
@@ -28,7 +28,14 @@ class App {
 		Canvas.onResize = () => {
 			grid.build();
 			rows = grid.cells.length;
+			if (!rows) {
+				return;
+			}
+
 			columns = grid.cells[0].length;
+			if (!columns) {
+				return;
+			}
 
 			WaveEngine.init(columns, rows);
 			grid.waveBuffer = WaveEngine.waveBuffer;
@@ -85,8 +92,10 @@ class App {
 
 				const dx = mouseX - cell.x;
 				const dy = mouseY - cell.y;
-				const dist = Math.sqrt(dx * dx + dy * dy);
-				if (dist > radius) continue;
+
+				const distSq = dx * dx + dy * dy;
+				if (distSq > radius * radius) continue;
+				const dist = Math.sqrt(distSq);
 
 				WaveEngine.inject(c, r, dist, force);
 			}

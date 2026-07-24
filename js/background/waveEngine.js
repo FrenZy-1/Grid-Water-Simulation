@@ -87,16 +87,12 @@ class WaveEngine {
 
 				const neighbourWeight = dc !== 0 && dr !== 0 ? 0.707 : 1;
 
-				sum += this.sampleNeighbour(currCell?.[key], neighbourWeight);
+				sum += (currCell?.[key] ?? 0) * neighbourWeight;
 				weight += neighbourWeight;
 			}
 		}
 
 		return sum / weight - this.waveBuffer[r][c][key];
-	}
-
-	static sampleNeighbour(value, weight) {
-		return (value ?? 0) * weight;
 	}
 }
 
