@@ -21,6 +21,8 @@ class App {
 		const grid = new Grid(Config.grid.gap.column, Config.grid.gap.row);
 		Canvas.onResize = () => {
 			grid.build();
+			WaveEngine.init(grid.cells[0].length, grid.cells.length);
+			grid.waveBuffer = WaveEngine.waveBuffer;
 		};
 
 		WaveEngine.init(grid.cells[0].length, grid.cells.length);

@@ -19,8 +19,8 @@
 
 :root[data-theme=dark] {
     --bg: #1E2F3E;
-    /* --canvas-shape: #F2EED5; */
-    --canvas-shape: #1E2F3E;
+    --canvas-shape: #F2EED5;
+    /* --canvas-shape: #1E2F3E; */
 }
 
 * {

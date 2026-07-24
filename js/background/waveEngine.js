@@ -12,7 +12,7 @@ class WaveEngine {
 
 		const centerR = Math.floor(rows / 2);
 		const centerC = Math.floor(columns / 2);
-		const maxDist = Math.sqrt(centerR ** 2 + centerC ** 2);
+		const maxDist = Math.max(0, Math.sqrt(centerR ** 2 + centerC ** 2));
 
 		for (var r = 0; r < rows; ++r) {
 			var bufferRow = [];
@@ -94,8 +94,8 @@ class WaveEngine {
 		return (
 			sum / weight -
 			(valueId === this.sampleTarget.HEIGHT
-				? this.waveBuffer[r][c]?.height
-				: this.waveBuffer[r][c]?.lap)
+				? this.waveBuffer[r]?.[c]?.height
+				: this.waveBuffer[r]?.[c]?.lap)
 		);
 	}
 
