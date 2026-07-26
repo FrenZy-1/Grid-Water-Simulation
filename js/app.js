@@ -1,10 +1,10 @@
 import { Config } from "./shared/config.js";
 
-import { Canvas } from "./canvas/canvas.js";
-import { WaveEngine } from "./background/waveEngine.js";
-import { Grid } from "./background/grid.js";
+import { Canvas } from "./core/canvas/canvas.js";
+import { WaveEngine } from "./core/waveEngine.js";
+import { Grid } from "./core/grid.js";
 import { Theme } from "./theme/theme.js";
-import { Pointer } from "./background/pointer.js";
+import { Pointer } from "./core/pointer.js";
 
 class App {
 	// Main event loop

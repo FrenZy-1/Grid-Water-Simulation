@@ -1,6 +1,6 @@
 import { Config } from "../shared/config.js";
 
-import { Canvas } from "../canvas/canvas.js";
+import { Canvas } from "./canvas/canvas.js";
 import { Theme } from "../theme/theme.js";
 
 class Cell {
