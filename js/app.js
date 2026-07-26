@@ -103,4 +103,4 @@ class App {
 	}
 }
 
-App.run();
+export { App };
