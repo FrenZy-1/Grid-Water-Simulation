@@ -6,6 +6,7 @@ class Theme {
 	static rippleClrs;
 
 	static init() {
+		this.shapeClr = this.styles.getPropertyValue("--canvas-shape").trim();
 		this.rippleClrs = [];
 
 		for (let i = 1; i <= 5; ++i) {
@@ -15,22 +16,6 @@ class Theme {
 				this.styles.getPropertyValue(`--canvas-ripple-${shade}`).trim(),
 			);
 		}
-
-		this.update(this.loadVariables(this.styles));
-	}
-
-	// Fired when the theme changes
-	static updateOnThemeChange() {
-		this.update(this.loadVariables(this.styles));
-	}
-
-	// Update class variables.
-	static update(colors) {
-		this.shapeClr = colors;
-	}
-
-	static loadVariables(styles) {
-		return styles.getPropertyValue("--canvas-shape").trim();
 	}
 }
 
