@@ -16,24 +16,20 @@ class Canvas {
 	}
 
 	static update() {
-		this.ctx.clearRect(
-			0,
-			0,
-			this.canvas.clientWidth,
-			this.canvas.clientHeight,
-		);
+		this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 	}
 
 	static setDimensions() {
 		this.update();
 
+		const root = document.documentElement;
 		const dpr = window.devicePixelRatio || 1;
 
-		this.canvas.width = Math.floor(window.innerWidth * dpr);
-		this.canvas.height = Math.floor(window.innerHeight * dpr);
+		this.canvas.width = Math.floor(root.clientWidth * dpr);
+		this.canvas.height = Math.floor(root.clientHeight * dpr);
 
-		this.canvas.style.width = window.innerWidth + "px";
-		this.canvas.style.height = window.innerHeight + "px";
+		this.canvas.style.width = root.clientWidth + "px";
+		this.canvas.style.height = root.clientHeight + "px";
 
 		this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 	}

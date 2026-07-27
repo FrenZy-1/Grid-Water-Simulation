@@ -1,6 +1,6 @@
 import { Config } from "./shared/config.js";
 
-import { Canvas } from "./core/canvas/canvas.js";
+import { Canvas } from "./core/canvas.js";
 import { WaveEngine } from "./core/waveEngine.js";
 import { Grid } from "./core/grid.js";
 import { Theme } from "./theme/theme.js";
@@ -102,5 +102,7 @@ class App {
 		}
 	}
 }
+
+App.run();
 
 export { App };
