@@ -6,7 +6,7 @@ class Theme {
 	static rippleClrs;
 
 	static init() {
-		this.shapeClr = this.styles.getPropertyValue("--canvas-shape").trim();
+		this.shapeClr = this.styles.getPropertyValue("--text").trim();
 		this.rippleClrs = [];
 
 		for (let i = 1; i <= 5; ++i) {
