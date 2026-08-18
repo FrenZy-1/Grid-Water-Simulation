@@ -37,4 +37,13 @@ export const Config = {
 			falloff: 0.05,
 		},
 	},
+
+	random: {
+		click: {
+			chance: 0.9779,
+		},
+		hover: {
+			chance: 0.9985,
+		},
+	},
 };

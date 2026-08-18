@@ -7,6 +7,8 @@ import { Theme } from "./theme/theme.js";
 import { Pointer } from "./core/pointer.js";
 
 class App {
+	static randomWavesActive = false;
+
 	// Main event loop
 	static run() {
 		const grid = this.init();
@@ -66,6 +68,7 @@ class App {
 	}
 
 	static loop(grid) {
+		App.randomWaves(grid);
 		Canvas.update();
 		WaveEngine.update();
 		grid.render();
@@ -98,6 +101,60 @@ class App {
 				const dist = Math.sqrt(distSq);
 
 				WaveEngine.inject(c, r, dist, force);
+			}
+		}
+	}
+
+	static randomWaves(grid) {
+		if (App.randomWavesActive) {
+			if (Math.random() > Config.random.click.chance) {
+				const x = Math.random() * Canvas.canvas.clientWidth;
+				const y = Math.random() * Canvas.canvas.clientHeight;
+
+				App.injectWave(
+					x,
+					y,
+					grid,
+					Config.wave.force.click *
+						Math.max(0, Math.min(Math.random() * 0.8, 1)),
+				);
+			}
+
+			if (Math.random() > Config.random.hover.chance) {
+				const x1 = Math.random() * Canvas.canvas.clientWidth;
+				const y1 = Math.random() * Canvas.canvas.clientHeight;
+				const x2 = Math.random() * Canvas.canvas.clientWidth;
+				const y2 = Math.random() * Canvas.canvas.clientHeight;
+
+				const minX = Math.min(x1, x2);
+				const maxX = Math.max(x1, x2);
+				const minY = Math.min(y1, y2);
+				const maxY = Math.max(y1, y2);
+
+				const cx = minX + Math.random() * (maxX - minX);
+				const cy = minY + Math.random() * (maxY - minY);
+
+				const steps = 40;
+				let i = 0;
+
+				const travel = setInterval(() => {
+					const t = i / steps;
+
+					// Quadratic bezier formula
+					const x =
+						(1 - t) * (1 - t) * x1 +
+						2 * (1 - t) * t * cx +
+						t * t * x2;
+					const y =
+						(1 - t) * (1 - t) * y1 +
+						2 * (1 - t) * t * cy +
+						t * t * y2;
+
+					App.injectWave(x, y, grid, Config.wave.force.hover);
+
+					i++;
+					if (i > steps) clearInterval(travel);
+				}, 16);
 			}
 		}
 	}
